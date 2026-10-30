@@ -157,8 +157,17 @@ jobs:
             Set-Content $cat $t -Encoding utf8
           }
 
+      - name: Kisa yola tasi (Windows 260 karakter siniri)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force D:\m | Out-Null
+          robocopy $PWD D:\m /E /XD .git /NFL /NDL /NJH /NJS /NP
+          if ($LASTEXITCODE -ge 8) { throw "robocopy basarisiz ($LASTEXITCODE)" }
+          $global:LASTEXITCODE = 0
+
       - name: Build WAP (managed, x64) and unpack
         shell: pwsh
+        working-directory: D:\m
         run: |
           $ErrorActionPreference = 'Stop'
 
@@ -210,5 +219,5 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: MediaControls-AppleMusic-x64
-          path: AppX
+          path: D:\m\AppX
           if-no-files-found: error
