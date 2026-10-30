@@ -17,6 +17,7 @@ internal static class IconThemeCatalog
     public const string ChubbyColorfulThemeId = "chubby-colorful";
     public const string EightBitBlocksThemeId = "eight-bit-blocks";
     public const string NeonCircuitThemeId = "neon-circuit";
+    public const string AppleMusicThemeId = "apple-music";
 
     public const string CurrentDefaultThemeId = ColorfulThemeId;
 
@@ -36,6 +37,10 @@ internal static class IconThemeCatalog
             "Fluent Solid",
             @"Assets\IconThemes\fluent-solid",
             CreateFluentSolidIcons()),
+        IconThemeDefinition.FromAssets(
+            AppleMusicThemeId,
+            "Apple Music",
+            @"Assets\IconThemes\apple-music"),
         IconThemeDefinition.FromAssets(
             PinkPrincessThemeId,
             "Pink Princess",

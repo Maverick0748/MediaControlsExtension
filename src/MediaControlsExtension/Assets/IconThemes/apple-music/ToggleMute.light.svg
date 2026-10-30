@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 48 48">
+<defs><mask id="cut"><rect width="48" height="48" fill="#fff"/><path d="M9 8L41 40" stroke="#000" stroke-width="9" stroke-linecap="round"/></mask></defs>
+<g mask="url(#cut)">
+<g transform="translate(3 0)">
+<path d="M7 19H14L23 11V37L14 29H7Z" fill="#1D1D1F" stroke="#1D1D1F" stroke-width="3" stroke-linejoin="round"/>
+<path d="M30.4 17.6A9 9 0 0 1 30.4 30.4" fill="none" stroke="#1D1D1F" stroke-width="3.6" stroke-linecap="round"/>
+<path d="M34.6 13.4A15 15 0 0 1 34.6 34.6" fill="none" stroke="#1D1D1F" stroke-width="3.6" stroke-linecap="round"/>
+</g>
+</g>
+<path d="M9 8L41 40" stroke="#1D1D1F" stroke-width="3.6" stroke-linecap="round" fill="none"/>
+</svg>

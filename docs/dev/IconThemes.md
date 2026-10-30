@@ -95,6 +95,7 @@ The settings value `default` resolves through `IconThemeCatalog.CurrentDefaultTh
 | `colorful` | Colorful | Yes | Assets | Original multicolor set; current application default. |
 | `fluent-outline` | Fluent Outline | Yes | Assets and Segoe Fluent glyphs | Outline system set; runtime fallback theme. |
 | `fluent-solid` | Fluent Solid | Yes | Assets and Segoe Fluent glyphs | Filled Segoe Fluent set with asset overrides. |
+| `apple-music` | Apple Music | Yes | Assets | Clean filled glyphs with rounded corners: white in dark mode, near-black in light mode. |
 | `pink-princess` | Pink Princess | Yes | Assets | Pink and pastel candy palette with sparkle accents. |
 | `chubby-mono` | Chubby Mono | Yes | Assets | Rounded cartoon geometry with muted monochrome light/dark variants. |
 | `chubby-colorful` | Chubby Colorful | Yes | Assets | Rounded cartoon geometry with a multicolor candy palette. |
