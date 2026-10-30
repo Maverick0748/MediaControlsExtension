@@ -1,0 +1,214 @@
+name: Build unpacked package (x64)
+
+# Elle calistirilir (Actions sekmesi > Run workflow). Cikti: acilmis (unpacked) AppX klasoru.
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-2025-vs2026
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Apple Music temasini ekle
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $dir = 'src/MediaControlsExtension/Assets/IconThemes/apple-music'
+          @'
+          """Apple Music tarzi (dolu, sade, yuvarlak koseli) simge temasini uretir."""
+          import sys
+          from pathlib import Path
+
+          OUT = Path(sys.argv[1])
+          OUT.mkdir(parents=True, exist_ok=True)
+
+          DARK = "#FFFFFF"    # koyu tema: beyaz
+          LIGHT = "#1D1D1F"   # acik tema: Apple koyu gri
+          DIS = 0.35          # devre disi opakligi
+
+
+          def svg(body):
+              return ('<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 48 48">\n'
+                      + body.strip("\n") + "\n</svg>\n")
+
+
+          def tri(d, c, w):
+              return f'<path d="{d}" fill="{c}" stroke="{c}" stroke-width="{w}" stroke-linejoin="round"/>'
+
+
+          def play(c):
+              return tri("M14.5 12V36L33.5 24Z", c, 5)
+
+
+          def pause(c):
+              return (f'<rect x="11" y="9" width="10" height="30" rx="3" fill="{c}"/>\n'
+                      f'<rect x="27" y="9" width="10" height="30" rx="3" fill="{c}"/>')
+
+
+          def skip_next(c):
+              return tri("M9 14V34L23 24Z", c, 4) + "\n" + tri("M25 14V34L39 24Z", c, 4)
+
+
+          def skip_prev(c):
+              return '<g transform="translate(48 0) scale(-1 1)">\n' + skip_next(c) + "\n</g>"
+
+
+          def play_pause(c):
+              return (tri("M9 13V35L22 24Z", c, 4) + "\n"
+                      f'<rect x="28" y="11" width="6" height="26" rx="2.5" fill="{c}"/>\n'
+                      f'<rect x="37" y="11" width="6" height="26" rx="2.5" fill="{c}"/>')
+
+
+          def no_media(c):
+              return (f'<ellipse cx="18" cy="34" rx="7.5" ry="6" fill="{c}" transform="rotate(-20 18 34)"/>\n'
+                      f'<rect x="22" y="9" width="4" height="25" rx="2" fill="{c}"/>\n'
+                      f'<path d="M24 9L25 9C32 11 38 14 38 23C34 19 30 18 25 18Z" fill="{c}"/>')
+
+
+          def speaker_shape(c):
+              return tri("M7 19H14L23 11V37L14 29H7Z", c, 3)
+
+
+          def wave(r, c):
+              import math
+              x = 24 + r * math.cos(math.radians(45))
+              y1 = 24 - r * math.sin(math.radians(45))
+              y2 = 24 + r * math.sin(math.radians(45))
+              return (f'<path d="M{x:.1f} {y1:.1f}A{r} {r} 0 0 1 {x:.1f} {y2:.1f}" fill="none" '
+                      f'stroke="{c}" stroke-width="3.6" stroke-linecap="round"/>')
+
+
+          def speaker(c, waves=(), shift=0, extra=""):
+              parts = [speaker_shape(c)] + [wave(r, c) for r in waves]
+              if extra:
+                  parts.append(extra)
+              inner = "\n".join(parts)
+              return f'<g transform="translate({shift} 0)">\n{inner}\n</g>' if shift else inner
+
+
+          def line(x1, y1, x2, y2, c):
+              return (f'<path d="M{x1} {y1}L{x2} {y2}" stroke="{c}" stroke-width="3.6" '
+                      f'stroke-linecap="round" fill="none"/>')
+
+
+          def vol_up(c):
+              return speaker(c, shift=0, extra=line(31, 24, 41, 24, c) + "\n" + line(36, 19, 36, 29, c))
+
+
+          def vol_down(c):
+              return speaker(c, shift=0, extra=line(31, 24, 41, 24, c))
+
+
+          def vol_mute(c):
+              return speaker(c, shift=0, extra=line(31, 19, 41, 29, c) + "\n" + line(41, 19, 31, 29, c))
+
+
+          def vol_zero(c):
+              return speaker(c, shift=9)
+
+
+          def vol_low(c):
+              return speaker(c, waves=(9,), shift=5)
+
+
+          def vol_medium(c):
+              return speaker(c, waves=(9, 15), shift=3)
+
+
+          def vol_high(c):
+              return speaker(c, waves=(9, 15, 21), shift=1)
+
+
+          def toggle_mute(c):
+              body = speaker(c, waves=(9, 15), shift=3)
+              return ('<defs><mask id="cut"><rect width="48" height="48" fill="#fff"/>'
+                      '<path d="M9 8L41 40" stroke="#000" stroke-width="9" stroke-linecap="round"/></mask></defs>\n'
+                      f'<g mask="url(#cut)">\n{body}\n</g>\n' + line(9, 8, 41, 40, c))
+
+
+          ICONS = {
+              "PlayPause": play_pause, "Play": play, "Pause": pause,
+              "SkipNext": skip_next, "SkipPrevious": skip_prev,
+              "NoMedia": no_media, "ToggleMute": toggle_mute,
+              "VolumeUp": vol_up, "VolumeDown": vol_down, "VolumeMute": vol_mute, "VolumeZero": vol_zero,
+              "VolumeUnmute": vol_medium, "VolumeLow": vol_low, "VolumeMedium": vol_medium, "VolumeHigh": vol_high,
+          }
+
+          count = 0
+          for name, fn in ICONS.items():
+              for appearance, color in (("dark", DARK), ("light", LIGHT)):
+                  (OUT / f"{name}.{appearance}.svg").write_text(svg(fn(color)), encoding="utf-8")
+                  count += 1
+          for name in ("SkipNext", "SkipPrevious"):
+              for appearance, color in (("dark", DARK), ("light", LIGHT)):
+                  body = ICONS[name](color)
+                  (OUT / f"{name}.disabled.{appearance}.svg").write_text(
+                      svg(f'<g opacity="{DIS}">\n{body}\n</g>'), encoding="utf-8")
+                  count += 1
+          print(count, "dosya ->", OUT)
+          '@ | Set-Content -Encoding utf8 gen_theme.py
+          python gen_theme.py $dir
+          $cat = 'src/MediaControlsExtension/Services/IconThemeCatalog.cs'
+          $t = Get-Content $cat -Raw
+          if ($t -notmatch 'apple-music') {
+            $t = $t -replace '(\r?\n)([ \t]*)(IconThemeDefinition\.FromAssets\(\s*PinkPrincessThemeId)', '$1$2IconThemeDefinition.FromAssets("apple-music", "Apple Music", @"Assets\IconThemes\apple-music"),$1$2$3'
+            if ($t -notmatch 'apple-music') { throw 'Katalog yamalanamadi' }
+            Set-Content $cat $t -Encoding utf8
+          }
+
+      - name: Build WAP (managed, x64) and unpack
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          # Visual Studio 2026 + DesktopBridge hedefleri
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+          $vs = & $vswhere -sort -version '[18.0,)' -products '*' -requires Microsoft.Component.MSBuild -property installationPath | Select-Object -First 1
+          if (-not $vs) { throw 'Visual Studio 2026 bulunamadi.' }
+          $msbuild = Join-Path $vs 'MSBuild\Current\Bin\MSBuild.exe'
+          $bridge = Join-Path $vs 'MSBuild\Microsoft\DesktopBridge\Microsoft.DesktopBridge.targets'
+          Write-Host "VS: $vs"
+          Write-Host "DesktopBridge hedefleri var mi: $(Test-Path $bridge)"
+          dotnet --list-sdks
+
+          $wap = (Resolve-Path 'src/MediaControlsExtension.Package/JPSoftworks.MediaControlsExtension.Package.wapproj').Path
+          $artifacts = Join-Path $PWD 'artifacts'
+          New-Item -ItemType Directory -Force $artifacts | Out-Null
+          $result = Join-Path $artifacts 'build-result.txt'
+
+          & $msbuild $wap /restore /t:Build /p:Configuration=Release /p:Platform=x64 `
+            /p:GenerateAppxPackageOnBuild=true /p:BuildingProject=true `
+            /p:PublishAot=false /p:PublishTrimmed=false /p:AppxBundle=Never `
+            /p:AppxPackageSigningEnabled=false "/p:AppxPackageDir=$artifacts/" `
+            /getProperty:AppxPackageOutput "/getResultOutputFile:$result" /nologo /m /v:minimal
+          if ($LASTEXITCODE -ne 0) { throw "MSBuild basarisiz oldu (kod $LASTEXITCODE)." }
+
+          $msix = (Get-Content $result -Raw).Trim()
+          if (-not [IO.Path]::IsPathRooted($msix)) { $msix = Join-Path (Split-Path -Parent $wap) $msix }
+          if (-not (Test-Path $msix)) { throw "MSIX bulunamadi: $msix" }
+          Write-Host "MSIX: $msix"
+
+          # En yeni x64 makeappx ile ac
+          $kits = Join-Path ${env:ProgramFiles(x86)} 'Windows Kits\10\bin'
+          $makeappx = Get-ChildItem $kits -Directory |
+            Where-Object { $v = $null; [version]::TryParse($_.Name, [ref]$v) } |
+            Sort-Object { [version]$_.Name } -Descending |
+            ForEach-Object { Join-Path $_.FullName 'x64\makeappx.exe' } |
+            Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $makeappx) { throw 'makeappx.exe bulunamadi.' }
+
+          $out = Join-Path $PWD 'AppX'
+          & $makeappx unpack /p $msix /d $out /o | Out-Null
+          if ($LASTEXITCODE -ne 0) { throw "makeappx basarisiz oldu (kod $LASTEXITCODE)." }
+          if (-not (Test-Path (Join-Path $out 'AppxManifest.xml'))) { throw 'AppxManifest.xml acilan pakette yok.' }
+          if (-not (Test-Path (Join-Path $out 'JPSoftworks.MediaControlsExtension\Assets\IconThemes\apple-music\Play.dark.svg'))) {
+            Write-Warning 'Apple Music tema dosyalari pakette bulunamadi!'
+          }
+          Get-ChildItem $out | Select-Object -First 20 | Format-Table Name
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MediaControls-AppleMusic-x64
+          path: AppX
+          if-no-files-found: error
